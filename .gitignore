@@ -1,1 +1,4 @@
 __pycache__
+
+# Ignore the jupyter notebook, since they are large.
+*.ipynb
