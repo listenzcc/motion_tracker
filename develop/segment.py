@@ -118,8 +118,8 @@ class Segment(object):
             r.apply(self.end_point - self.start_point)
 
         for j, ax in enumerate(self.axes):
-            # if j == axis_idx:
-            #     continue
+            if j == axis_idx:
+                continue
             self.axes[j] = r.apply(ax)
 
         # Rotation links
