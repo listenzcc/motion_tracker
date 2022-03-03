@@ -148,13 +148,15 @@ shoulder.links_to(upper_arm)
 upper_arm.links_to(lower_arm)
 fig = display(shoulder, opacity=0.2)
 
-for _ in tqdm(range(200), 'Simulation'):
+for _ in tqdm(range(30), 'Simulation'):
     idx = np.random.randint(len(upper_arm.axes))
-    deg = np.random.random() * 2 - 0.5
+    # deg = np.random.random() * 2 - 0.5
+    deg = 1
     upper_arm.rotate_inside(idx, deg)
 
     idx = np.random.randint(len(lower_arm.axes))
-    deg = np.random.random() * 2 - 1.5
+    # deg = np.random.random() * 2 - 1.5
+    deg = -1
     lower_arm.rotate_inside(idx, deg)
 
     if _ % 10 == 0:
@@ -163,6 +165,4 @@ for _ in tqdm(range(200), 'Simulation'):
 fig = display(shoulder, fig, opacity=1, showlegend=True)
 fig.show()
 
-# %%
-upper_arm.axes_limit, lower_arm.axes_limit
 # %%

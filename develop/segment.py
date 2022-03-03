@@ -96,6 +96,7 @@ class Segment(object):
         ]):
             self.axes_limit[axis_idx][0] += deg
         else:
+            assert(1 == 2)
             return
             print('-' * 300)
 
@@ -117,6 +118,8 @@ class Segment(object):
             r.apply(self.end_point - self.start_point)
 
         for j, ax in enumerate(self.axes):
+            # if j == axis_idx:
+            #     continue
             self.axes[j] = r.apply(ax)
 
         # Rotation links
