@@ -73,28 +73,6 @@ def display(segment, fig=None, opacity=0.7, showlegend=False):
     return fig
 
 
-# %%
-# segment = Segment([0, 0, 0], [0, 0, 5], [[0, 1, 1], [1, 0, 0]], 'Seg 1')
-# segment2 = Segment([0, 0, 5], [0, 5, 0], [[0, 1, 1], [1, 0, 0]], 'Seg 2')
-# segment3 = Segment([0, 5, 0], [0, 5, 10], [[0, 1, 1], [1, 0, 0]], 'Seg 3')
-
-# segment.links_to(segment2)
-# segment2.links_to(segment3)
-
-# seg, axes = segment.get_xyz()
-# seg, axes
-
-# fig = display(segment, opacity=0.2)
-# # fig.show()
-
-# segment.rotate_inside(1, 30)
-# segment2.rotate_inside(0, 30)
-# fig = display(segment, fig, opacity=0.2)
-# # fig.show()
-
-# segment.rotate_outside([-1, 0, 0], [0, 1, 0], 45)
-# fig = display(segment, fig, opacity=1)
-# fig.show()
 
 # %%
 # shoulder = Segment([0, 0, 0], [5, 0, 0],

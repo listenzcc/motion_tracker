@@ -1,9 +1,12 @@
 # %%
+from matplotlib.pyplot import hexbin
 import numpy as np
 import pandas as pd
 
 import plotly.express as px
 import plotly.graph_objects as go
+
+from sklearn.decomposition import PCA
 
 from tqdm.auto import tqdm
 
@@ -133,30 +136,71 @@ for _ in tqdm(range(count)):
 
     records.append(positions + angles)
 
+
 records = pd.DataFrame(
     records, columns=['x', 'y', 'z', 'a00', 'a01', 'a02', 'a10', 'a11'])
 records
 
 # %%
+pca = PCA(n_components=3)
+X = np.array(records[[e for e in records.columns if e.startswith('a')]])
+pca.fit(X)
+print(pca.explained_variance_ratio_)
+x = pca.transform(X)
 
-fig = px.scatter_3d(records, x='x', y='y', z='z', color='a00')
 
-fig.update_traces(marker=dict(size=2,
-                              opacity=0.5,
-                              line=dict(width=2,
-                                        color='DarkSlateGrey')),
-                  selector=dict(mode='markers'))
+def _scale(x):
+    m, M = np.min(x), np.max(x)
+    return (x - m) / (M - m)
+
+
+for c in range(x.shape[1]):
+    x[:, c] = _scale(x[:, c])
+
+records[['pc0', 'pc1', 'pc2']] = x
+records
+
+# %%
+
+
+def _color(se):
+    r = int(se['pc0'] * 255)
+    g = int(se['pc1'] * 255)
+    b = int(se['pc2'] * 255)
+    return '#' + ('{:02X}' * 3).format(r, g, b)
+
+
+records['color'] = records.apply(_color, axis=1)
+records
+
+# %%
+kwargs = dict(marker=dict(size=2,
+                          opacity=0.1,
+                          line=None),
+              selector=dict(mode='markers'))
+
+for col in ['pc0', 'pc1', 'pc2']:
+    fig = px.scatter_3d(records, x='x', y='y', z='z', color=col, title=col)
+    fig.update_traces(**kwargs)
+    fig.show()
+
+# %%
+fig = px.scatter_3d(records, x='x', y='y', z='z', title='Colored by PCs')
+kwargs['marker']['color'] = records['color']
+fig.update_traces(**kwargs)
+fig.show()
 
 shoulder, upper_arm, lower_arm = mk_segment()
 display(shoulder, fig)
 
 se = records.iloc[np.random.choice(records.index)]
-upper_arm.rotate_inside(0, se['a00'])
-upper_arm.rotate_inside(1, se['a01'])
-upper_arm.rotate_inside(2, se['a02'])
-lower_arm.rotate_inside(0, se['a10'])
-lower_arm.rotate_inside(1, se['a11'])
-display(shoulder, fig)
+for r in np.linspace(0, 1, 10, endpoint=True):
+    upper_arm.rotate_inside(0, r * se['a00'])
+    upper_arm.rotate_inside(1, r * se['a01'])
+    upper_arm.rotate_inside(2, r * se['a02'])
+    lower_arm.rotate_inside(0, r * se['a10'])
+    lower_arm.rotate_inside(1, r * se['a11'])
+    display(shoulder, fig)
 
 fig.show()
 

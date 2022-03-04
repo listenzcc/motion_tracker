@@ -96,7 +96,7 @@ class Segment(object):
         ]):
             self.axes_limit[axis_idx][0] += deg
         else:
-            assert(1 == 2)
+            # assert(1 == 2)
             return
             print('-' * 300)
 
