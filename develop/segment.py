@@ -42,13 +42,21 @@ class Segment(object):
         - end_point: Where it ends, the shape is (3, );
         - axes: The axes of rotation, the shape is (n, 3), n is the number of axes.
                 The axes are normalized to unit length;
-        - axes_limit: The angle limit of the rotation, the format is (x, x0, x1)
-                      - x is the current angle (in degree);
+        - axes_limit: The angle limit of the rotation, the format is (0, x0, x1)
+                      - x is the current angle (in degree), the initial value must be 0;
                       - x0 is the lower boundary;
                       - x1 is the upper boundary;
+                      - The relationship of x0 < x < x1 is required;
                       If not provided, a very limitted range (-10, 10) is used;
         - name: The name of the segment.
         '''
+
+        self.cartesian = [
+            _float([1, 0, 0]),
+            _float([0, 1, 0]),
+            _float([0, 0, 1]),
+        ]
+
         self.start_point = _float(start_point)
         self.end_point = _float(end_point)
 
@@ -57,7 +65,7 @@ class Segment(object):
         if axes_limit is None:
             self.axes_limit = [_float([0, -10, 10]) for _ in axes]
         else:
-            assert(all([e[2] > e[1] for e in axes_limit]))
+            assert(all([e[2] > e[1] and e[0] == 0 for e in axes_limit]))
             self.axes_limit = [_float(e) for e in axes_limit]
 
         self.name = name
@@ -85,48 +93,35 @@ class Segment(object):
                     It rotates only along the axes;
         - deg: The angle (in degree) of rotation, an float.
         '''
-        # Safe input
+        # Safety input
         axis = self.axes[axis_idx]
 
-        # self.axes_limit[axis_idx][0] += deg
-
+        # Refuse rotating beyond the limit
         if all([
             self.axes_limit[axis_idx][0] + deg <= self.axes_limit[axis_idx][2],
             self.axes_limit[axis_idx][0] + deg >= self.axes_limit[axis_idx][1],
         ]):
             self.axes_limit[axis_idx][0] += deg
         else:
-            # assert(1 == 2)
-            return
-            print('-' * 300)
-
-        # if self.axes_limit[axis_idx][0] + deg > self.axes_limit[axis_idx][2]:
-        #     raise ValueError('Deg is {}, {}'.format(deg, self.axes_limit))
-        #     print('-' * 10, deg, oifjwoijef)
-        #     deg = self.axes_limit[axis_idx][2] - self.axes_limit[axis_idx][0]
-        #     self.axes_limit[axis_idx][0] = self.axes_limit[axis_idx][2]
-        #     print('-' * 10, deg)
-
-        # if self.axes_limit[axis_idx][0] + deg < self.axes_limit[axis_idx][1]:
-        #     deg = self.axes_limit[axis_idx][1] - self.axes_limit[axis_idx][0]
-        #     self.axes_limit[axis_idx][0] = self.axes_limit[axis_idx][1]
+            return axis, 0
 
         r = R.from_rotvec(axis * _deg2rad(deg))
 
-        # Rotation self
+        # Rotate the self
         self.end_point = self.start_point + \
             r.apply(self.end_point - self.start_point)
 
         for j, ax in enumerate(self.axes):
-            if j == axis_idx:
-                continue
             self.axes[j] = r.apply(ax)
 
-        # Rotation links
+        for j, ax in enumerate(self.cartesian):
+            self.cartesian[j] = r.apply(ax)
+
+        # Rotate the links
         for segment in self.links:
             segment.rotate_outside(self.start_point, axis, deg)
 
-        return
+        return axis, deg
 
     def rotate_outside(self, origin_point, axis, deg):
         '''
@@ -137,12 +132,12 @@ class Segment(object):
         - axis: The rotation axis, the shape is (3,);
         - deg: The angle (in degrees) of rotation, an float.
         '''
-        # Safe input
+        # Safety input
         origin_point = _float(origin_point)
         axis = _normalize(_float(axis))
         r = R.from_rotvec(axis * _deg2rad(deg))
 
-        # Rotation self
+        # Rotate the self
         self.start_point, self.end_point = r.apply([
             self.start_point - origin_point,
             self.end_point - origin_point
@@ -153,11 +148,14 @@ class Segment(object):
         for j, ax in enumerate(self.axes):
             self.axes[j] = r.apply(ax)
 
-        # Rotation links
+        for j, ax in enumerate(self.cartesian):
+            self.cartesian[j] = r.apply(ax)
+
+        # Rotate the links
         for segment in self.links:
             segment.rotate_outside(origin_point, axis, deg)
 
-        return
+        return origin_point, axis, deg
 
     def get_xyz(self):
         '''
