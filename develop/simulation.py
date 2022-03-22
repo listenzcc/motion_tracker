@@ -119,7 +119,7 @@ ranges = [
     lower_arm.axes_limit[1][1:],
 ]
 
-count = 10000
+count = 10000 * 1
 for _ in tqdm(range(count)):
     shoulder, upper_arm, lower_arm = mk_segment()
 
@@ -188,13 +188,16 @@ for col in ['pc0', 'pc1', 'pc2']:
 fig = px.scatter_3d(records, x='x', y='y', z='z', title='Colored by PCs')
 kwargs['marker']['color'] = records['color']
 fig.update_traces(**kwargs)
-fig.show()
+# fig.show()
 
 shoulder, upper_arm, lower_arm = mk_segment()
-display(shoulder, fig)
+# display(shoulder, fig)
 
 se = records.iloc[np.random.choice(records.index)]
-for r in np.linspace(0, 1, 10, endpoint=True):
+# print(se)
+
+for r in np.linspace(0, 1, 8, endpoint=True):
+    shoulder, upper_arm, lower_arm = mk_segment()
     upper_arm.rotate_inside(0, r * se['a00'])
     upper_arm.rotate_inside(1, r * se['a01'])
     upper_arm.rotate_inside(2, r * se['a02'])
@@ -203,5 +206,39 @@ for r in np.linspace(0, 1, 10, endpoint=True):
     display(shoulder, fig)
 
 fig.show()
+
+fig = px.scatter_3d(records, x='x', y='y', z='z', title='Colored by PCs')
+kwargs['marker']['color'] = records['color']
+fig.update_traces(**kwargs)
+# fig.show()
+
+shoulder, upper_arm, lower_arm = mk_segment()
+# display(shoulder, fig)
+
+a = np.array([se['x'], se['y'], se['z']])
+b = np.array(records[['x', 'y', 'z']])
+c = np.linalg.norm((b-a), axis=1)
+d = np.array(records[['a00', 'a01', 'a02', 'a10', 'a11']])
+e = np.linalg.norm(d, axis=1)
+select = np.argmin(c * 5 + e)
+
+se = records.iloc[select]
+# print(se)
+
+# shoulder, upper_arm, lower_arm = mk_segment()
+for r in np.linspace(0, 1, 8, endpoint=True):
+    shoulder, upper_arm, lower_arm = mk_segment()
+    upper_arm.rotate_inside(0, r * se['a00'])
+    upper_arm.rotate_inside(1, r * se['a01'])
+    upper_arm.rotate_inside(2, r * se['a02'])
+    lower_arm.rotate_inside(0, r * se['a10'])
+    lower_arm.rotate_inside(1, r * se['a11'])
+    display(shoulder, fig)
+
+fig.show()
+
+# %%
+records
+
 
 # %%
