@@ -70,6 +70,7 @@ class Segment(object):
 
         self.name = name
         self.links = []
+        self.links_inv = []
 
     def links_to(self, segment):
         '''
@@ -81,7 +82,9 @@ class Segment(object):
         Returns:
         - The length of the links
         '''
+        # Double-way link
         self.links.append(segment)
+        assert(len(self.links) == 1)
         return len(self.links)
 
     def rotate_inside(self, axis_idx, deg):
@@ -93,33 +96,35 @@ class Segment(object):
                     It rotates only along the axes;
         - deg: The angle (in degree) of rotation, an float.
         '''
+        _next = self.links[0]
         # Safety input
-        axis = self.axes[axis_idx]
+        axis = _next.axes[axis_idx]
 
         # Refuse rotating beyond the limit
         if all([
-            self.axes_limit[axis_idx][0] + deg <= self.axes_limit[axis_idx][2],
-            self.axes_limit[axis_idx][0] + deg >= self.axes_limit[axis_idx][1],
+            _next.axes_limit[axis_idx][0] +
+                deg <= _next.axes_limit[axis_idx][2],
+            _next.axes_limit[axis_idx][0] +
+                deg >= _next.axes_limit[axis_idx][1],
         ]):
-            self.axes_limit[axis_idx][0] += deg
+            _next.axes_limit[axis_idx][0] += deg
         else:
             return axis, 0
 
-        r = R.from_rotvec(axis * _deg2rad(deg))
+        # r = R.from_rotvec(axis * _deg2rad(deg))
 
         # Rotate the self
-        self.end_point = self.start_point + \
-            r.apply(self.end_point - self.start_point)
+        # self.end_point = self.start_point + \
+        #     r.apply(self.end_point - self.start_point)
 
-        for j, ax in enumerate(self.axes):
-            self.axes[j] = r.apply(ax)
+        # for j, ax in enumerate(self.axes):
+        #     self.axes[j] = r.apply(ax)
 
-        for j, ax in enumerate(self.cartesian):
-            self.cartesian[j] = r.apply(ax)
+        # for j, ax in enumerate(self.cartesian):
+        #     self.cartesian[j] = r.apply(ax)
 
         # Rotate the links
-        for segment in self.links:
-            segment.rotate_outside(self.start_point, axis, deg)
+        _next.rotate_outside(self.end_point, axis, deg)
 
         return axis, deg
 
@@ -132,6 +137,11 @@ class Segment(object):
         - axis: The rotation axis, the shape is (3,);
         - deg: The angle (in degrees) of rotation, an float.
         '''
+        if len(self.links) == 1:
+            _next = self.links[0]
+        else:
+            _next = None
+
         # Safety input
         origin_point = _float(origin_point)
         axis = _normalize(_float(axis))
@@ -145,15 +155,18 @@ class Segment(object):
         self.start_point += origin_point
         self.end_point += origin_point
 
-        for j, ax in enumerate(self.axes):
-            self.axes[j] = r.apply(ax)
+        if _next is not None:
+            for j, ax in enumerate(_next.axes):
+                _next.axes[j] = r.apply(ax)
 
-        for j, ax in enumerate(self.cartesian):
-            self.cartesian[j] = r.apply(ax)
+            for j, ax in enumerate(_next.cartesian):
+                _next.cartesian[j] = r.apply(ax)
+
+            _next.rotate_outside(origin_point, axis, deg)
 
         # Rotate the links
-        for segment in self.links:
-            segment.rotate_outside(origin_point, axis, deg)
+        # for segment in self.links:
+        #     segment.rotate_outside(origin_point, axis, deg)
 
         return origin_point, axis, deg
 
