@@ -3,3 +3,6 @@ __pycache__
 # Ignore the jupyter notebook, since they are large.
 *.ipynb
 *.ipynb_checkpoints
+
+# Ignore the logs
+*.log
