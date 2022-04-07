@@ -8,10 +8,13 @@ _dtype = np.float32
 # %%
 
 
+def _iterable(x):
+    return hasattr(x, '__iter__')
+
+
 def _canBePtr3(x):
-    if hasattr(x, '__iter__'):
-        assert(len(x) == 3)
-        return True
+    if _iterable(x):
+        return len(x) == 3
     return False
 
 
@@ -97,7 +100,7 @@ class Vector(object):
         self.orig = Point(orig)
         self.dest = Point(dest)
 
-        self.relative = None
+        self.relative = 'Auto set'
 
         pass
 
@@ -111,8 +114,8 @@ class Vector(object):
     @relative.setter
     def relative(self, _):
         '''
-        Set the relative position of the dest from the orig,
-        we need nothing for input.
+        Set the relative position of the dest from the orig.
+        It needs nothing for input.
         '''
         self.__relative = self.dest.xyz - self.orig.xyz
         self.__normalized = _normalize(self.__relative)
