@@ -23,6 +23,9 @@ def _deg2rad(deg):
 
 
 def _regular(x, y='N.A.', z='N.A.'):
+    if isinstance(x, np.ndarray):
+        return x
+
     if _canBePtr3(x):
         x, y, z = x
     v = np.array([x, y, z], dtype=_dtype)
@@ -146,19 +149,28 @@ class Vector(object):
         The rotation center is orig point.
         If not provided, the rotation center uses the orig of the vector.
         '''
-        vec = _regular(vec)
+        if isinstance(vec, Vector):
+            vec = _normalize(_regular(vec.relative))
+        else:
+            vec = _normalize(_regular(vec))
+
         rad = _deg2rad(deg)
         r = R.from_rotvec(vec * rad)
 
         if orig is None:
             # Rotate from the self's orig
-            self.dest = self.orig + r.apply(self.dest - self.orig)
-            self.relative = None
+            self.dest.xyz = self.orig.xyz + \
+                r.apply(self.dest.xyz - self.orig.xyz)
         else:
             # Rotate from the given orig
-            orig = _regular(orig)
-            self.orig = orig + r.apply(self.orig - orig)
-            self.dest = orig + r.apply(self.dest - orig)
+            if isinstance(orig, Point):
+                orig = orig.xyz
+            else:
+                orig = _regular(orig)
+            self.orig.xyz = orig + r.apply(self.orig.xyz - orig)
+            self.dest.xyz = orig + r.apply(self.dest.xyz - orig)
+
+        self.relative = None
 
         return self
 
