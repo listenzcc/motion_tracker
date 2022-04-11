@@ -28,64 +28,64 @@ def _regular(x, y='N.A.', z='N.A.'):
 
     if _canBePtr3(x):
         x, y, z = x
+
     v = np.array([x, y, z], dtype=_dtype)
     return v
 
 
-def _normalize(x, y='N.A.', z='N.A.'):
-    v = _regular(x, y, z)
-    return v / np.linalg.norm(v)
+def _normalize(xyz):
+    return xyz / np.linalg.norm(xyz)
 
 
 # %%
 
-class Point(object):
-    '''
-    Class of Point
-    '''
+# class Point_Deprecated(object):
+#     '''
+#     Class of Point
+#     '''
 
-    def __init__(self, x, y=0, z=0):
-        '''
-        Init the point by x, y, z or x=(x, y, z)
-        '''
-        self.xyz = _regular(x, y, z)
-        pass
+#     def __init__(self, x, y=0, z=0):
+#         '''
+#         Init the point by x, y, z or x=(x, y, z)
+#         '''
+#         self.xyz = _regular(x, y, z)
+#         pass
 
-    @property
-    def xyz(self):
-        '''
-        Get (x, y, z) of the point
-        '''
-        return np.array([self.x, self.y, self.z], dtype=_dtype)
+#     @property
+#     def xyz(self):
+#         '''
+#         Get (x, y, z) of the point
+#         '''
+#         return np.array([self.x, self.y, self.z], dtype=_dtype)
 
-    @xyz.setter
-    def xyz(self, x_in_3):
-        '''
-        Set (x, y, z) of the point as x_in_3,
-        it is the 3 elements tuple of the point coordinates.
-        '''
-        x, y, z = _regular(x_in_3)
-        self.x = x
-        self.y = y
-        self.z = z
-        pass
+#     @xyz.setter
+#     def xyz(self, x_in_3):
+#         '''
+#         Set (x, y, z) of the point as x_in_3,
+#         it is the 3 elements tuple of the point coordinates.
+#         '''
+#         x, y, z = _regular(x_in_3)
+#         self.x = x
+#         self.y = y
+#         self.z = z
+#         pass
 
-    def translate_by(self, dx, dy=0, dz=0):
-        '''
-        Translate the point by dx, dy, dz or dx=(dx, dy, dz)
-        '''
-        dx, dy, dz = _regular(dx, dy, dz)
-        self.x += dx
-        self.y += dy
-        self.z += dz
-        return self
+#     def translate_by(self, dx, dy=0, dz=0):
+#         '''
+#         Translate the point by dx, dy, dz or dx=(dx, dy, dz)
+#         '''
+#         dx, dy, dz = _regular(dx, dy, dz)
+#         self.x += dx
+#         self.y += dy
+#         self.z += dz
+#         return self
 
-    def translate_to(self, x, y=0, z=0):
-        '''
-        Translate the point to x, y, z or x=(x, y, z)
-        '''
-        self.xyz(_regular(x, y, z))
-        return self
+#     def translate_to(self, x, y=0, z=0):
+#         '''
+#         Translate the point to x, y, z or x=(x, y, z)
+#         '''
+#         self.xyz(_regular(x, y, z))
+#         return self
 
 
 # %%
@@ -100,10 +100,10 @@ class Vector(object):
         '''
         Init the vector by the orig and dest points
         '''
-        self.orig = Point(orig)
-        self.dest = Point(dest)
+        self.orig = _regular(orig)
+        self.dest = _regular(dest)
 
-        self.relative = 'Auto set'
+        # self.relative = 'Auto set'
 
         pass
 
@@ -112,25 +112,14 @@ class Vector(object):
         '''
         Get the relative position of the dest from the orig
         '''
-        return self.__relative
-
-    @relative.setter
-    def relative(self, _):
-        '''
-        Set the relative position of the dest from the orig.
-        It needs nothing for input.
-        '''
-        self.__relative = self.dest.xyz - self.orig.xyz
-        self.__normalized = _normalize(self.__relative)
-        self.__norm = np.linalg.norm(self.__relative)
-        pass
+        return self.dest - self.orig
 
     @property
     def normalized(self):
         '''
         Get the normalization of the vector with the unit length
         '''
-        return self.__normalized
+        return _normalize(self.relative)
 
     @property
     def norm(self):
@@ -139,7 +128,7 @@ class Vector(object):
         in 3D space,
         it is the length of the vector.
         '''
-        return self.__norm
+        return np.linalg.norm(self.relative)
 
     def rotate(self, vec, deg, orig=None):
         '''
@@ -150,7 +139,7 @@ class Vector(object):
         If not provided, the rotation center uses the orig of the vector.
         '''
         if isinstance(vec, Vector):
-            vec = _normalize(_regular(vec.relative))
+            vec = _normalize(vec.relative)
         else:
             vec = _normalize(_regular(vec))
 
@@ -163,14 +152,11 @@ class Vector(object):
                 r.apply(self.dest.xyz - self.orig.xyz)
         else:
             # Rotate from the given orig
-            if isinstance(orig, Point):
-                orig = orig.xyz
-            else:
-                orig = _regular(orig)
-            self.orig.xyz = orig + r.apply(self.orig.xyz - orig)
-            self.dest.xyz = orig + r.apply(self.dest.xyz - orig)
+            orig = _regular(orig)
+            self.orig = orig + r.apply(self.orig - orig)
+            self.dest = orig + r.apply(self.dest - orig)
 
-        self.relative = None
+        # self.relative = None
 
         return self
 
@@ -178,8 +164,8 @@ class Vector(object):
         '''
         Translate the vector by dx, dy, dz or dx=(dx, dy, dz)
         '''
-        self.orig.translate_by(dx, dy, dz)
-        self.dest.translate_by(dx, dy, dz)
+        self.orig += _regular(dx, dy, dz)
+        self.dest += _regular(dx, dy, dz)
         return self
 
     def translate_to(self, x, y=0, z=0):
@@ -187,9 +173,8 @@ class Vector(object):
         Translate the orig point to x, y, z and x=(x, y, z),
         the dest point is tranlated accordingly.
         '''
-        d = _regular(x, y, z) - self.orig.xyz
-        self.orig.translate_by(d)
-        self.dest.translate_by(d)
+        d = _regular(x, y, z) - self.orig
+        self.translate_by(d)
         return self
 
     def product(self, vec, normalize=False):
