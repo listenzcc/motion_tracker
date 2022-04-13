@@ -86,7 +86,7 @@ ranges
 records = []
 
 count = 10000 * 1
-for _ in tqdm(range(count)):
+for _ in tqdm(range(count), 'Simulation by {}'.format(count)):
     segments = mk_segments()
     degrees = random_values(ranges)
 
@@ -148,7 +148,7 @@ d = pd_records[['x', 'y', 'z']].to_numpy()
 n = len(d)
 coef_matrix = np.zeros((n, n))
 print(d.shape, coef_matrix.shape)
-for j in tqdm(range(n)):
+for j in tqdm(range(n), 'Compute Coefficients'):
     coef_matrix[j] = np.linalg.norm(d - d[j], axis=1)
 
 np.fill_diagonal(coef_matrix, np.inf)
@@ -171,12 +171,12 @@ pd_records
 pd_records['selected'] = False
 
 ignores = []
-for j in tqdm(range(n)):
+for j in tqdm(range(n), 'Shrinking Nodes'):
     if j in ignores:
         continue
 
     coef_vec = coef_matrix[j]
-    indexes = np.nonzero(coef_vec < 5)[0].tolist()
+    indexes = np.nonzero(coef_vec < 2)[0].tolist()
 
     if len(indexes) > 1:
         pd = pd_records.loc[indexes]
