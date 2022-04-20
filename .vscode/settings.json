@@ -3,10 +3,12 @@
         "astype",
         "coef",
         "dtype",
+        "iloc",
         "ndarray",
         "onstart",
         "rotvec",
         "scipy",
+        "tolist",
         "xaxis",
         "yaxis",
         "zaxis"

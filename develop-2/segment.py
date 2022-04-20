@@ -194,28 +194,31 @@ class SegmentDisplayer(object):
             name='Axis-?'
         )
 
-        self.axes_colors = px.colors.qualitative.Plotly
+        self.axes_colors = ['red', 'green', 'blue', 'cyan',
+                            'yellow', 'pink']  # px.colors.qualitative.Plotly
 
         self.fig_layout = dict(
             width=800,
             height=800,
             autosize=False,
             scene=dict(
-                aspectratio=dict(x=.5, y=.8, z=.4),
+                # aspectratio=dict(x=.5, y=.8, z=.4),
+                aspectratio=dict(x=1, y=1, z=1),
                 # aspectmode='manual',
-                aspectmode='data',
+                # aspectmode='data',
                 camera=dict(up=dict(x=0, y=1, z=0)),
                 xaxis=dict(range=[-30, 20]),
                 yaxis=dict(range=[-30, 50]),
                 zaxis=dict(range=[-20, 20]),
             ),
+            title='No title'
         )
 
         self.showlegend = False
         self.opacity = 0.7
         pass
 
-    def plot(self, segment, fig=None, opacity=None, showlegend=None, axes_colors=None, segment_style=None, axis_style=None, fig_layout=None):
+    def plot(self, segment, fig=None, title=None, opacity=None, showlegend=None, axes_colors=None, segment_style=None, axis_style=None, fig_layout=None):
         if opacity is None:
             opacity = self.opacity
 
@@ -235,8 +238,8 @@ class SegmentDisplayer(object):
             fig_layout = self.fig_layout
 
         def _2ptr_from_segment(segment):
-            _orig_xyz = segment.body.orig.xyz
-            _dest_xyz = segment.body.dest.xyz
+            _orig_xyz = segment.body.orig
+            _dest_xyz = segment.body.dest
             seg = dict(
                 x=[_orig_xyz[0], _dest_xyz[0]],
                 y=[_orig_xyz[1], _dest_xyz[1]],
@@ -245,8 +248,8 @@ class SegmentDisplayer(object):
             return seg
 
         def _2ptr_from_vector(vector):
-            _orig_xyz = vector.orig.xyz
-            _dest_xyz = vector.dest.xyz
+            _orig_xyz = vector.orig
+            _dest_xyz = vector.dest
             seg = dict(
                 x=[_orig_xyz[0], _dest_xyz[0]],
                 y=[_orig_xyz[1], _dest_xyz[1]],
@@ -280,9 +283,12 @@ class SegmentDisplayer(object):
 
         # Draw the children of the axis
         for child in segment.children:
-            self.plot(child, fig, opacity, showlegend, axes_colors,
+            self.plot(child, fig, title, opacity, showlegend, axes_colors,
                       segment_style, axis_style, fig_layout)
             pass
+
+        if title is not None:
+            fig_layout['title'] = title
 
         fig.update_layout(**fig_layout)
 
