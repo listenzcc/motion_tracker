@@ -121,7 +121,7 @@ class Segment(object):
 
         return axes
 
-    def rotate(self, axis, deg, orig=None, mode='inner'):
+    def rotate(self, axis, deg, orig=None, mode='inner', step=0):
         '''
         Rotate the segment around the [axis] by [deg]rees,
         the [orig]in point of the rotation is optional.
@@ -166,13 +166,18 @@ class Segment(object):
             if orig is None:
                 orig = self.body.orig
 
-        self.body.rotate(axis['vector'], deg, orig)
+        # We keep the first segment accessed fixed,
+        # no rotation
+        if step > 0:
+            self.body.rotate(axis['vector'], deg, orig)
+
+        step += 1
 
         for _axis in self.axes:
             _axis['vector'].rotate(axis['vector'], deg, orig)
 
         for child in self.children:
-            child.rotate(axis, deg, orig, mode='outer')
+            child.rotate(axis, deg, orig, mode='outer', step=step)
 
         return self
 
@@ -207,9 +212,9 @@ class SegmentDisplayer(object):
                 # aspectmode='manual',
                 # aspectmode='data',
                 camera=dict(up=dict(x=0, y=1, z=0)),
-                xaxis=dict(range=[-30, 20]),
-                yaxis=dict(range=[-30, 50]),
-                zaxis=dict(range=[-20, 20]),
+                xaxis=dict(range=[-40, 30]),
+                yaxis=dict(range=[-40, 60]),
+                zaxis=dict(range=[-30, 30]),
             ),
             title='No title'
         )

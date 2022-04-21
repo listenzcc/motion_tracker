@@ -16,18 +16,18 @@ from segment import Segment, SegmentDisplayer
 
 ''' md
 Direction defines:
-- x, 0, right
+- x, 0, left
 - y, 1, up
 - z, 2, front
 '''
 
 angle_ranges = dict(
-    a00=(-90, 45),
-    a01=(-60, 10),
-    a02=(0, 145),
-    a10=(-145, 0),
-    a12=(-20, 20),
-    a22=(-90, 90),
+    a00=(-90, 45, 'shoulder', '0'),
+    a01=(-60, 10, 'shoulder', '1'),
+    a02=(0, 145, 'shoulder', '2'),
+    a10=(-145, 0, 'upperArm', '0'),
+    a12=(-20, 20, 'upperArm', '2'),
+    a22=(-90, 90, 'lowerArm', '0'),
 )
 
 angle_columns = [e for e in angle_ranges]
@@ -40,15 +40,15 @@ def mk_segments():
 
     shoulder.append_axis([shoulder.body.dest,
                           shoulder.body.dest + [1, 0, 0]],
-                         name='0', deg=0, deg_limit=angle_ranges['a00'])
+                         name='0', deg=0, deg_limit=angle_ranges['a00'][:2])
 
     shoulder.append_axis([shoulder.body.dest,
                           shoulder.body.dest + [0, 1, 0]],
-                         name='1', deg=0, deg_limit=angle_ranges['a01'])
+                         name='1', deg=0, deg_limit=angle_ranges['a01'][:2])
 
     shoulder.append_axis([shoulder.body.dest,
                           shoulder.body.dest + [0, 0, 1]],
-                         name='2', deg=0, deg_limit=angle_ranges['a02'])
+                         name='2', deg=0, deg_limit=angle_ranges['a02'][:2])
 
     # Upper Arm
     upper_arm = Segment(shoulder.body.dest,
@@ -56,11 +56,11 @@ def mk_segments():
 
     upper_arm.append_axis([upper_arm.body.dest,
                            upper_arm.body.dest + [1, 0, 0]],
-                          name='0', deg=0, deg_limit=angle_ranges['a10'])
+                          name='0', deg=0, deg_limit=angle_ranges['a10'][:2])
 
     upper_arm.append_axis([upper_arm.body.dest,
                            upper_arm.body.dest + [0, 0, 1]],
-                          name='2', deg=0, deg_limit=angle_ranges['a12'])
+                          name='2', deg=0, deg_limit=angle_ranges['a12'][:2])
 
     # Lower Arm
     lower_arm = Segment(upper_arm.body.dest,
@@ -68,7 +68,7 @@ def mk_segments():
 
     lower_arm.append_axis([lower_arm.body.dest,
                            lower_arm.body.dest + [0, 0, 1]],
-                          name='0', deg=0, deg_limit=angle_ranges['a22'])
+                          name='2', deg=0, deg_limit=angle_ranges['a22'][:2])
 
     # Hand
     hand = Segment(lower_arm.body.dest,
@@ -282,7 +282,7 @@ def shrink_records(records, radius=2):
     return new_records
 
 
-def shrink_records(records, count=1000):
+def shrink_records(records, count=2000):
     angles = records[angle_columns].to_numpy()
     print(angles.shape)
 
@@ -292,7 +292,9 @@ def shrink_records(records, count=1000):
     regressors = []
     _xyz = xyz * 0
 
-    X = angles[:, (2, 4, 5)]
+    X = angles[:, (0, 3, 5)]
+    # X = angles[:, (0, 1, 2, 3, 4, 5)]
+    # X = angles[:, (1, 4, 5)]
 
     for j in tqdm(range(3), 'Compute SVR'):
         regressor = svm.SVR()
@@ -336,12 +338,26 @@ for col in ['pc0', 'pc1', 'pc2', 'angleDistance']:
     fig.update_traces(**trace_kwargs)
     fig.show()
 
-# -------- %%
+# %%
 # Display the new_records
-fig = px.scatter_3d(new_records, x='x', y='y',
-                    z='z', title='Colored by PCs')
+fig = px.scatter_3d(new_records,
+                    x='x', y='y', z='z',
+                    title='Colored by PCs')
 trace_kwargs['marker']['color'] = new_records['color']
 fig.update_traces(**trace_kwargs)
+
+segments = mk_segments()
+displayer.plot(segments[0], fig=fig)
+
+rec = new_records.loc[np.random.choice(new_records.index)]
+for j, k in enumerate(angle_columns):
+    seg = segments[int(k[1])]
+    name = k[2]
+    deg = rec[k]
+    seg.rotate(seg.get_axes_by_name(name), deg)
+
+displayer.plot(segments[0], fig=fig)
+
 fig.show()
 
 
@@ -350,7 +366,7 @@ fig.show()
 _new_records = new_records.copy()
 
 for col in angle_columns:
-    _min, _max = angle_ranges[col]
+    _min, _max, _, _ = angle_ranges[col]
     _new_records[col] = _new_records[col].map(
         lambda e: (e - _min) / (_max - _min))
 
@@ -389,7 +405,9 @@ xyz = records[['x', 'y', 'z']].to_numpy()
 print(xyz.shape)
 
 
-X = angles[:, (2, 4, 5)]
+X = angles[:, (0, 3, 5)]
+# X = angles[:, (0, 1, 2, 3, 4, 5)]
+# X = angles[:, (1, 4, 5)]
 
 for j in range(3):
     y = xyz[:, j]
