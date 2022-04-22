@@ -4,6 +4,7 @@
         "coef",
         "dtype",
         "iloc",
+        "inplace",
         "ndarray",
         "onstart",
         "rotvec",

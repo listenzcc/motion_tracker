@@ -208,13 +208,14 @@ class SegmentDisplayer(object):
             autosize=False,
             scene=dict(
                 # aspectratio=dict(x=.5, y=.8, z=.4),
-                aspectratio=dict(x=1, y=1, z=1),
+                aspectratio=dict(x=1.2, y=1.2, z=1.2),
                 # aspectmode='manual',
+                # aspectmode='auto',
                 # aspectmode='data',
                 camera=dict(up=dict(x=0, y=1, z=0)),
-                xaxis=dict(range=[-40, 30]),
-                yaxis=dict(range=[-40, 60]),
-                zaxis=dict(range=[-30, 30]),
+                xaxis=dict(range=[-40, 80]),
+                yaxis=dict(range=[-40, 80]),
+                zaxis=dict(range=[-40, 80]),
             ),
             title='No title'
         )

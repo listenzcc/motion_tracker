@@ -1,4 +1,5 @@
 # %%
+from mercantile import neighbors
 from sklearn import linear_model
 from sklearn import svm
 import numpy as np
@@ -27,7 +28,7 @@ angle_ranges = dict(
     a02=(0, 145, 'shoulder', '2'),
     a10=(-145, 0, 'upperArm', '0'),
     a12=(-20, 20, 'upperArm', '2'),
-    a22=(-90, 90, 'lowerArm', '0'),
+    a22=(-90, 10, 'lowerArm', '2'),
 )
 
 angle_columns = [e for e in angle_ranges]
@@ -114,10 +115,12 @@ def simulate(segments, angle_columns=angle_columns, count=10000):
     ranges
 
     def random_values(ranges):
-        return [
-            np.random.uniform(e[-1][0], e[-1][1], size=1)[0]
-            for e in ranges
-        ]
+        def _rnd(a, b):
+            r = np.random.uniform(a, b, size=1).astype(np.int32)[0]
+            return r
+
+        return [_rnd(e[-1][0], e[-1][1])
+                for e in ranges]
 
     # Random angles
     lst = []
@@ -221,7 +224,8 @@ def compute_angle_distance(records, angle_columns=angle_columns):
 # Simulation and compute pca decomposition
 full_records = simulate(segments, count=10000)
 compute_pca_columns(full_records)
-compute_angle_distance(full_records)
+compute_angle_distance(full_records,
+                       [angle_columns[e] for e in [1, 3, 5]])
 full_records
 
 # %%
@@ -282,44 +286,7 @@ def shrink_records(records, radius=2):
     return new_records
 
 
-def shrink_records(records, count=2000):
-    angles = records[angle_columns].to_numpy()
-    print(angles.shape)
-
-    xyz = records[['x', 'y', 'z']].to_numpy()
-    print(xyz.shape)
-
-    regressors = []
-    _xyz = xyz * 0
-
-    X = angles[:, (0, 3, 5)]
-    # X = angles[:, (0, 1, 2, 3, 4, 5)]
-    # X = angles[:, (1, 4, 5)]
-
-    for j in tqdm(range(3), 'Compute SVR'):
-        regressor = svm.SVR()
-        # regressor = linear_model.BayesianRidge(copy_X=True)
-        regressor = linear_model.LinearRegression(copy_X=True, n_jobs=10)
-        y = xyz[:, j]
-        regressor.fit(X, y)
-        p = regressor.predict(X)
-
-        # regressor.fit(X, y, np.exp(-np.abs(y-p)))
-        # p = regressor.predict(X)
-
-        regressors.append(regressor)
-        _xyz[:, j] = y - p
-
-    values = np.linalg.norm(_xyz, axis=1)
-    order = np.argsort(values)
-    new_records = records.iloc[order[:count]]
-
-    return new_records, regressors
-
-
-# new_records = shrink_records(full_records)
-
-new_records, regressors = shrink_records(full_records)
+new_records = shrink_records(full_records)
 new_records
 
 
@@ -394,34 +361,86 @@ print(vars)
 # %%
 new_records
 
-# %%
 
+# %%
 records = new_records.copy()
 
+# for col in angle_ranges:
+#     min, max, _, _ = angle_ranges[col]
+#     records[col] = (records[col] - min) / (max - min)
+
 angles = records[angle_columns].to_numpy()
-print(angles.shape)
-
 xyz = records[['x', 'y', 'z']].to_numpy()
-print(xyz.shape)
+index = records.index.to_numpy()
+
+n = angles.shape[0]
+
+select_angle_columns = [1, 3, 5]
+k = [1, 1, 1]
+select_angle_weights = np.repeat(np.reshape(k, (1, len(k))), n, axis=0)
+
+src_limit = 10
+
+lst = []
+for j in tqdm(range(n), 'Compute distances'):
+    src = angles[j, select_angle_columns]
+
+    diff_src = angles[:, select_angle_columns] - src
+    diff_src *= select_angle_weights
+    diff_dst = xyz - xyz[j]
+
+    src_measure = np.linalg.norm(diff_src, axis=1)
+    dst_measure = np.linalg.norm(diff_dst, axis=1)
+
+    _order = np.argsort(src_measure)
+
+    _index = index[_order]
+    _src_dis = src_measure[_order]
+    _dst_dis = dst_measure[_order]
+
+    _select = _src_dis < src_limit
+
+    select_index = _index[_select]
+    src_dis = _src_dis[_select].astype(np.int32)
+    dst_dis = _dst_dis[_select].astype(np.int32)
+
+    lst.append((index[j], len(select_index), select_index, src_dis, dst_dis))
+    pass
+
+neighbor_records = pd.DataFrame(lst,
+                                columns=['idx', 'num', 'neighbors', 'angleDistances', 'xyzDistances'])
+neighbor_records.set_index('idx', inplace=True)
 
 
-X = angles[:, (0, 3, 5)]
-# X = angles[:, (0, 1, 2, 3, 4, 5)]
-# X = angles[:, (1, 4, 5)]
+def _nearest(e):
+    if len(e) == 0:
+        return 0
 
-for j in range(3):
-    y = xyz[:, j]
+    s = np.sort(e)
 
-    regressor = regressors[j]
-    p = regressor.predict(X)
+    if len(s) == 1:
+        return s[0]
 
-    order = np.argsort(y)
-    _y = y[order]
-    _p = p[order]
+    return s[1]
 
-    fig = px.scatter(_y, title='xyz'[j])
-    fig.add_trace(go.Scatter(y=_p, name='p'))
-    fig.show()
 
+neighbor_records['nearest'] = neighbor_records['xyzDistances'].map(_nearest)
+neighbor_records
+
+# %%
+
+
+# %%
+# xyz = new_records[['x', 'y', 'z']].to_numpy()
+
+# n = xyz.shape[0]
+
+# mat = np.zeros((n, n))
+
+# for j in range(n):
+#     mat[j] = np.linalg.norm(xyz - xyz[j], axis=1)
+
+# fig = px.histogram(mat.flatten())
+# fig.show()
 
 # %%
