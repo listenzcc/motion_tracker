@@ -13,5 +13,10 @@
         "xaxis",
         "yaxis",
         "zaxis"
-    ]
+    ],
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#302F0A",
+        "titleBar.activeBackground": "#44410E",
+        "titleBar.activeForeground": "#FBFBED"
+    }
 }

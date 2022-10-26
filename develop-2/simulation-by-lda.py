@@ -311,16 +311,16 @@ def shrink_records(raw_records, count=2000):
     for j in tqdm(range(3), 'Compute SVR'):
         regressor = svm.SVR()
         # regressor = linear_model.BayesianRidge(copy_X=True)
-        regressor = linear_model.LinearRegression(copy_X=True, n_jobs=10)
-        y = xyz[:, j]
-        regressor.fit(X, y)
+        # regressor = linear_model.LinearRegression(copy_X=True, n_jobs=10)
+        g = xyz[:, j]
+        regressor.fit(X, g)
         p = regressor.predict(X)
 
         # regressor.fit(X, y, np.exp(-np.abs(y-p)))
         # p = regressor.predict(X)
 
         regressors.append(regressor)
-        _xyz[:, j] = y - p
+        _xyz[:, j] = g - p
 
     values = np.linalg.norm(_xyz, axis=1)
     order = np.argsort(values)
@@ -394,12 +394,13 @@ fig = px.histogram(_new_records, x=angle_columns, barmode=barmode)
 fig.show()
 
 # %%
+print('================================')
+print('Vars')
 vars = dict()
 for col in angle_columns:
     d = _new_records[col]
     h, b = np.histogram(d)
     vars[col] = np.std(h)
-    print(h)
 
 print(vars)
 
@@ -422,18 +423,35 @@ X = angles[:, (0, 3, 5)]
 # X = angles[:, (1, 4, 5)]
 
 for j in range(3):
-    y = xyz[:, j]
+    # g: ground truth;
+    # p: prediction;
+
+    g = xyz[:, j]
 
     regressor = regressors[j]
     p = regressor.predict(X)
 
-    order = np.argsort(y)
-    _y = y[order]
+    order = np.argsort(p)
+    _g = g[order]
     _p = p[order]
 
-    fig = px.scatter(_y, title='xyz'[j])
-    fig.add_trace(go.Scatter(y=_p, name='p'))
+    t = pd.DataFrame([_g, _p]).transpose()
+    t.columns = ['Ground truth', 'Prediction']
+
+    fig = px.scatter(t,
+                     x='Ground truth',
+                     y='Prediction',
+                     width=600,
+                     height=600,
+                     title='Direction-{}'.format('xyz'[j]),
+                     trendline='ols')
     fig.show()
 
+    # fig = px.scatter(_g, title='xyz'[j])
+    # fig.add_trace(go.Scatter(y=_p, name='p'))
+    # fig.show()
+
+
+# %%
 
 # %%

@@ -1,5 +1,4 @@
 # %%
-from mercantile import neighbors
 from sklearn import linear_model
 from sklearn import svm
 import numpy as np
@@ -89,6 +88,7 @@ segments = mk_segments()
 # Display the left arm
 displayer = SegmentDisplayer()
 fig = displayer.plot(segments[0], title='Left arm')
+fig.update_layout(width=600, height=600)
 fig.show()
 
 
@@ -301,6 +301,7 @@ trace_kwargs = dict(marker=dict(size=2,
 for col in ['pc0', 'pc1', 'pc2', 'angleDistance']:
     fig = px.scatter_3d(full_records,
                         x='x', y='y', z='z',
+                        width=600, height=600,
                         color=col, title=col)
     fig.update_traces(**trace_kwargs)
     fig.show()
@@ -324,6 +325,8 @@ for j, k in enumerate(angle_columns):
     seg.rotate(seg.get_axes_by_name(name), deg)
 
 displayer.plot(segments[0], fig=fig)
+
+fig.update_layout(width=600, height=600)
 
 fig.show()
 
@@ -428,6 +431,8 @@ neighbor_records['nearest'] = neighbor_records['xyzDistances'].map(_nearest)
 neighbor_records
 
 # %%
+fig = px.histogram(neighbor_records, x='nearest')
+fig.show()
 
 
 # %%
@@ -443,4 +448,6 @@ neighbor_records
 # fig = px.histogram(mat.flatten())
 # fig.show()
 
+# %%
+# new_records.to_csv('tmp.csv')
 # %%
