@@ -28,8 +28,7 @@ def generate_logger(name, filepath, level_file, level_console, format_file, form
     return logger
 
 
-LOGGER = generate_logger(
-    'Motion-Tracker', 'motion-segment.log', **logger_kwargs)
+LOGGER = generate_logger('Motion-Tracker', 'motion-segment.log', **logger_kwargs)
 
 LOGGER.info(
     '--------------------------------------------------------------------------------')

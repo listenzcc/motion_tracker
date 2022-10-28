@@ -84,14 +84,20 @@ def mk_segments():
 
 # Make the left arm
 segments = mk_segments()
+segments, segments[0].name, segments[0].get_axes_by_name('0')
+
+# %%
 
 # Display the left arm
 displayer = SegmentDisplayer()
 fig = displayer.plot(segments[0], title='Left arm')
 fig.show()
-
+fig.data
 
 # %%
+
+# %%
+
 
 def simulate(segments, angle_columns=angle_columns, count=10000):
     '''
